@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom'
 import Login from '../pages/Sign-in/Login'
 import ForgotPassword from '../pages/Sign-in/Forgot-Password'
 import Dashboard from '../pages/Dashboard/Dashboard'
-
 function Routers() {
   return (
     <Routes>
@@ -13,5 +12,4 @@ function Routers() {
     </Routes>
   )
 }
-
 export default Routers
