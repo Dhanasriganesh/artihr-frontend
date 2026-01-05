@@ -1,5 +1,4 @@
 // src/components/pages/ForgetPassword.jsx
-import React from "react";
  
 const ForgetPassword = () => {
   return (

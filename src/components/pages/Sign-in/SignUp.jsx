@@ -5,83 +5,119 @@ import artihcusLogo from "../../../assets/artihcus-logo1.svg";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
-const Login = () => {
+const SignUp = () => {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    userId: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
- 
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    setError("");
+  };
+
+  const validateForm = () => {
+    if (!formData.name || !formData.userId || !formData.password) {
+      setError("Please fill in all required fields");
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.message || "Sign up failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      // Persist auth info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Navigate to dashboard
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Sign up error:", err);
+      setError("Unable to reach the server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Left side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-24">
+      {/* Left side - Sign Up Form */}
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-20 xl:px-24 py-12">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back!
+              Create an account!
             </h2>
             <p className="text-gray-600 mb-8">
-              Simplify your workflow and boost your productivity<br />
-              with Artihcus. <span className="text-orange-500 font-medium">Get started .</span>
+              Join Artihcus and streamline your workflow.<br />
+              <span className="text-orange-500 font-medium">Get started today.</span>
             </p>
           </div>
 
-          <form
-            className="space-y-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setError("");
-
-              if (!identifier || !password) {
-                setError("Please fill in all fields");
-                return;
-              }
-
-              setLoading(true);
-              try {
-                const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ identifier, password }),
-                });
-
-                if (!res.ok) {
-                  const data = await res.json().catch(() => ({}));
-                  setError(data?.message || "Login failed. Check your credentials.");
-                  setLoading(false);
-                  return;
-                }
-
-                const data = await res.json();
-                // Persist auth info (simple localStorage approach)
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user));
-
-                // Navigate to dashboard (adjust if you have a different route)
-                navigate("/dashboard");
-              } catch (err) {
-                console.error("Login error:", err);
-                setError("Unable to reach the server. Please try again.");
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <input
-                id="identifier"
-                name="identifier"
+                id="name"
+                name="name"
                 type="text"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-full bg-gray-50 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="Employee ID / Client ID / Email"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="Name"
+                value={formData.name}
+                onChange={handleChange}
               />
             </div>
- 
+
+            <div>
+              <input
+                id="userId"
+                name="userId"
+                type="text"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-full bg-gray-50 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="User ID"
+                value={formData.userId}
+                onChange={handleChange}
+              />
+            </div>
+
             <div className="relative">
               <input
                 id="password"
@@ -90,8 +126,8 @@ const Login = () => {
                 required
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-full bg-gray-50 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
               />
               <div
                 className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
@@ -104,25 +140,13 @@ const Login = () => {
                 )}
               </div>
             </div>
- 
-            <div className="flex justify-end">
-                <Link to="/forgot-password">
-                  <button
-                  type="button"
-                    className="text-sm text-gray-600 hover:text-gray-800"
-                  
-                  >
-                    Forgot Password?
-                  </button>
-                </Link>
-            </div>
- 
+
             <button
               type="submit"
               className="w-full bg-orange-500 text-white py-3 px-4 rounded-full font-medium hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-200"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Login"}
+              {loading ? "Creating account..." : "Sign Up"}
             </button>
 
             {error && (
@@ -131,18 +155,18 @@ const Login = () => {
               </div>
             )}
           </form>
- 
+
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
-              Not a member?{" "}
-              <Link to="/signup" className="text-orange-500 hover:text-orange-600 font-medium">
-                Sign up now
+              Already have an account?{" "}
+              <Link to="/" className="text-orange-500 hover:text-orange-600 font-medium">
+                Sign in
               </Link>
             </p>
           </div>
         </div>
       </div>
- 
+
       {/* Right side - Illustration */}
       <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 relative overflow-hidden">
         <div className="relative z-10 text-center">
@@ -163,7 +187,7 @@ const Login = () => {
                 </div>
               </div>
             </div>
- 
+
             {/* Floating avatars */}
             <div className="absolute -top-12 left-12 w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
               <div className="w-8 h-8 bg-gray-400 rounded-full"></div>
@@ -175,7 +199,7 @@ const Login = () => {
               <div className="w-8 h-8 bg-gray-400 rounded-full"></div>
             </div>
           </div>
- 
+
           {/* Task card */}
           <div className="bg-white rounded-2xl p-6 shadow-lg max-w-xs mx-auto mb-8">
             <div className="flex items-center justify-center h-20">
@@ -186,21 +210,22 @@ const Login = () => {
               />
             </div>
           </div>
- 
+
           {/* Bottom text */}
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
               Make your work easier and organized<br />
               with <span className="text-orange-500">Artihcus</span>
             </h3>
           </div>
         </div>
- 
+
         {/* Background decorative dots */}
        
       </div>
     </div>
   );
 };
- 
-export default Login;
+
+export default SignUp;
+
